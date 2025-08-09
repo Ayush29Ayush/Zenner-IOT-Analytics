@@ -58,168 +58,162 @@ Includes:
 
 1. **Clone and enter the repo**
 
-    ```sh
-    git clone
-    cd iot_analytics
-    ```
-
+   ```sh
+   git clone
+   ```
 2. **Create and activate virtualenv**
 
-    ```sh
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install --upgrade pip
-    ```
-
+   ```sh
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install --upgrade pip
+   ```
 3. **Install Python dependencies**
 
-    ```sh
-    pip install -r requirements.txt
-    ```
-    If requirements.txt is not present, install:
-    ```sh
-    pip install django djangorestframework drf-spectacular pymongo pandas celery redis python-decouple django-health-check flower[redis]
-    ```
+   ```sh
+   pip install -r requirements.txt
+   ```
 
+   If requirements.txt is not present, install:
+
+   ```sh
+   pip install django djangorestframework drf-spectacular pymongo pandas celery redis python-decouple django-health-check flower[redis]
+   ```
 4. **Create media directories and place CSVs**
 
-    ```sh
-    mkdir -p media/logs
-    # Copy your CSVs into media/
-    # media/lorawan_uplink_devices.csv
-    # media/orders.csv
-    ```
-
+   ```sh
+   mkdir -p media/logs
+   # Copy your CSVs into media/
+   # media/lorawan_uplink_devices.csv
+   # media/orders.csv
+   ```
 5. **Create .env (project root)**
 
-    ```ini
-    SECRET_KEY=change-me
-    DEBUG=True
-    ALLOWED_HOSTS=127.0.0.1,localhost
-    MONGODB_URI=mongodb://localhost:27017/
-    MONGODB_DB=lorawan_db
-    CELERY_BROKER_URL=redis://localhost:6379/0
-    CELERY_RESULT_BACKEND=redis://localhost:6379/1
-    TIME_ZONE=Asia/Kolkata
-    DJANGO_LOG_DIR=media/logs
-    ```
-
+   ```ini
+   SECRET_KEY=change-me
+   DEBUG=True
+   ALLOWED_HOSTS=127.0.0.1,localhost
+   MONGODB_URI=mongodb://localhost:27017/
+   MONGODB_DB=lorawan_db
+   CELERY_BROKER_URL=redis://localhost:6379/0
+   CELERY_RESULT_BACKEND=redis://localhost:6379/1
+   TIME_ZONE=Asia/Kolkata
+   DJANGO_LOG_DIR=media/logs
+   ```
 6. **Ensure services are running**
 
-    ```sh
-    # MongoDB
-    systemctl status mongod || sudo systemctl start mongod
-    mongosh --eval 'db.runCommand({ ping: 1 })'
+   ```sh
+   # MongoDB
+   systemctl status mongod || sudo systemctl start mongod
+   mongosh --eval 'db.runCommand({ ping: 1 })'
 
-    # Redis
-    systemctl status redis-server || sudo systemctl start redis-server
-    redis-cli ping
-    ```
-
+   # Redis
+   systemctl status redis-server || sudo systemctl start redis-server
+   redis-cli ping
+   ```
 7. **(Optional) Create DB and indexes (Compass or mongosh)**
 
-    ```js
-    mongosh
-    use lorawan_db
-    db.uplinks.createIndex({dev_eui: 1})
-    db.uplinks.createIndex({device_id: 1})
-    db.uplinks.createIndex({gateway_id: 1})
-    db.uplinks.createIndex({temperature: 1})
-    db.sales.createIndex({"Order ID": 1, "Product ID": 1})
-    db.sales.createIndex({"Product ID": 1})
-    db.sales.createIndex({"Order Date": 1})
-    db.sales.createIndex({"Category": 1, "Sub-Category": 1})
-    ```
-
+   ```js
+   mongosh
+   use lorawan_db
+   db.uplinks.createIndex({dev_eui: 1})
+   db.uplinks.createIndex({device_id: 1})
+   db.uplinks.createIndex({gateway_id: 1})
+   db.uplinks.createIndex({temperature: 1})
+   db.sales.createIndex({"Order ID": 1, "Product ID": 1})
+   db.sales.createIndex({"Product ID": 1})
+   db.sales.createIndex({"Order Date": 1})
+   db.sales.createIndex({"Category": 1, "Sub-Category": 1})
+   ```
 8. **Django migrations and runserver**
 
-    ```sh
-    python manage.py migrate
-    python manage.py runserver
-    ```
-
+   ```sh
+   python manage.py migrate
+   python manage.py runserver
+   ```
 9. **Start Celery worker and beat (two terminals)**
 
-    ```sh
-    # Terminal A
-    source .venv/bin/activate
-    celery -A iot_analytics worker -l info
-    ```
+   ```sh
+   # Terminal A
+   source .venv/bin/activate
+   celery -A iot_analytics worker -l info
+   ```
 
-    ```sh
-    # Terminal B
-    source .venv/bin/activate
-    celery -A iot_analytics beat -l info
-    ```
-
+   ```sh
+   # Terminal B
+   source .venv/bin/activate
+   celery -A iot_analytics beat -l info
+   ```
 10. **Start Flower (optional monitoring)**
 
     ```sh
     source .venv/bin/activate
     celery -A iot_analytics flower --address=127.0.0.1 --port=5555
     ```
+
     Open: [http://127.0.0.1:5555](http://127.0.0.1:5555)
 
 ---
 
 ## API Endpoints
 
--   **Swagger/OpenAPI:**
-    -   `GET` [http://127.0.0.1:8000/api/docs/](http://127.0.0.1:8000/api/docs/)
+- **Swagger/OpenAPI:**
 
--   **Uplinks (Task 1):**
-    -   `POST` `/api/uplinks/ingest/` — ingest from `media/lorawan_uplink_devices.csv`
-    -   `GET` `/api/uplinks/top/?n=10` — top N devices by uplinks
-    -   `GET` `/api/uplinks/avg-rssi-snr/` — avg RSSI/SNR per device (sorted by RSSI asc)
-    -   `GET` `/api/uplinks/avg-weather/` — avg temperature/humidity per `gateway_id`
-    -   `GET` `/api/uplinks/duplicates/` — `device_ids` with more than one record
-    -   `POST` `/api/uplinks/export-hot/` — export temp > 35°C to `media/temp_detail.json`
-    -   `POST` `/api/uplinks/run-all-async/` — run ingestion + analyses via Celery
-    -   `GET` `/api/uplinks/logs/` — return `uplinks_analysis.log` content
+  - `GET` [http://127.0.0.1:8000/api/docs/](http://127.0.0.1:8000/api/docs/)
+- **Uplinks (Task 1):**
 
--   **Sales (Task 2):**
-    -   `POST` `/api/sales/ingest/` — ingest from `media/orders.csv`
-    -   `GET` `/api/sales/top-products/` — top 5 products by sales
-    -   `GET` `/api/sales/monthly-revenue/` — revenue per month across years
-    -   `GET` `/api/sales/avg-by-category/` — avg sales per sub-category grouped by category
-    -   `GET` `/api/sales/annual-growth/` — per-year sales + YoY growth
-    -   `POST` `/api/sales/run-all-async/` — run ingestion + analyses via Celery
-    -   `GET` `/api/sales/logs/` — return `sales_analysis.log` content
+  - `POST` `/api/uplinks/ingest/` — ingest from `media/lorawan_uplink_devices.csv`
+  - `GET` `/api/uplinks/top/?n=10` — top N devices by uplinks
+  - `GET` `/api/uplinks/avg-rssi-snr/` — avg RSSI/SNR per device (sorted by RSSI asc)
+  - `GET` `/api/uplinks/avg-weather/` — avg temperature/humidity per `gateway_id`
+  - `GET` `/api/uplinks/duplicates/` — `device_ids` with more than one record
+  - `POST` `/api/uplinks/export-hot/` — export temp > 35°C to `media/temp_detail.json`
+  - `POST` `/api/uplinks/run-all-async/` — run ingestion + analyses via Celery
+  - `GET` `/api/uplinks/logs/` — return `uplinks_analysis.log` content
+- **Sales (Task 2):**
 
--   **Health:**
-    -   `GET` [http://127.0.0.1:8000/health/](http://127.0.0.1:8000/health/)
-        -   Includes Celery checks (ping, queue), DB, storage, etc.
+  - `POST` `/api/sales/ingest/` — ingest from `media/orders.csv`
+  - `GET` `/api/sales/top-products/` — top 5 products by sales
+  - `GET` `/api/sales/monthly-revenue/` — revenue per month across years
+  - `GET` `/api/sales/avg-by-category/` — avg sales per sub-category grouped by category
+  - `GET` `/api/sales/annual-growth/` — per-year sales + YoY growth
+  - `POST` `/api/sales/run-all-async/` — run ingestion + analyses via Celery
+  - `GET` `/api/sales/logs/` — return `sales_analysis.log` content
+- **Health:**
+
+  - `GET` [http://127.0.0.1:8000/health/](http://127.0.0.1:8000/health/)
+    - Includes Celery checks (ping, queue), DB, storage, etc.
 
 ---
 
 ## Scheduling
 
--   Periodic schedules are configured in settings (`CELERY_BEAT_SCHEDULE`).
--   Example (every minute):
-    -   `uplinks.tasks.run_uplinks_ingestion_and_analysis`
-    -   `sales.tasks.run_sales_ingestion_and_analysis`
--   To change frequency, edit settings and restart Celery beat.
+- Periodic schedules are configured in settings (`CELERY_BEAT_SCHEDULE`).
+- Example (every minute):
+  - `uplinks.tasks.run_uplinks_ingestion_and_analysis`
+  - `sales.tasks.run_sales_ingestion_and_analysis`
+- To change frequency, edit settings and restart Celery beat.
 
 ---
 
 ## Logs
 
--   `media/logs/django.log` — Django app logs
--   `media/logs/uplinks_analysis.log` — Task 1 logs
--   `media/logs/sales_analysis.log` — Task 2 logs
--   temp export written to `media/temp_detail.json`
+- `media/logs/django.log` — Django app logs
+- `media/logs/uplinks_analysis.log` — Task 1 logs
+- `media/logs/sales_analysis.log` — Task 2 logs
+- temp export written to `media/temp_detail.json`
 
 ---
 
 ## CSV Ingestion Notes
 
--   Default ingestion reads from files in `media/`.
+- Default ingestion reads from files in `media/`.
 
 ---
 
 ## Security & Production Notes
 
--   Keep `.env` out of version control; use strong `SECRET_KEY`.
--   Set `DEBUG=False` in production.
--   Use durable Redis and MongoDB deployments.
--   Add proper logging rotation and monitoring.
+- Keep `.env` out of version control; use strong `SECRET_KEY`.
+- Set `DEBUG=False` in production.
+- Use durable Redis and MongoDB deployments.
+- Add proper logging rotation and monitoring.
